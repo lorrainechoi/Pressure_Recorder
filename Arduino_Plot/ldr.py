@@ -7,7 +7,20 @@ import matplotlib.pyplot as plt
 import numpy as np
 import win32com.client
 
+# import fluidsynth
+# import time
+# import sys
+# import math
+
 connected = False
+
+# fs = fluidsynth.Synth()
+# fs.start(driver='alsa')
+#
+# # Load the accordion soundfont
+# sfid = fs.sfload("accordion.sf2")
+# fs.program_select(0, sfid, 0, 0)
+
 
 #finds COM port that the Arduino is on (assumes only one Arduino is connected)
 wmi = win32com.client.GetObject("winmgmts:")
@@ -32,6 +45,9 @@ period = 100                                # period (in ms) between each messag
 pad1 = [0]*window_size
 pad2 = [0]*window_size
 
+pad1_record = []
+pad2_record = []
+
 xline, = plt.plot(pad1)
 yline, = plt.plot(pad2)
 
@@ -52,50 +68,41 @@ while True:                                 #while you are taking data
     while (ser.inWaiting() == 0):
         pass
 
-    data = ser.readline()                   #reads until it gets a carriage return. MAKE SURE THERE IS A CARRIAGE RETURN OR IT READS FOREVER
+    try:
+        data = ser.readline()                   #reads until it gets a carriage return. MAKE SURE THERE IS A CARRIAGE RETURN OR IT READS FOREVER
 
-    if counter == 0:
-        data = ser.readline()
+        if counter == 0:
+            data = ser.readline()
 
-    # print data
-    data = data.rstrip('\x00')
-    # print data
-    temp = data.split()                     #splits string into a list at the tabs
-    # print temp
+        data = data.rstrip('\x00')
+        temp = data.split()                     #splits string into a list at the tabs
 
-    pad1.append(int(temp[0]))               #add new value as int to current list
-    pad2.append(int(temp[1]))
+        pad1.append(int(temp[0]))               # add new value as int to current list
+        pad2.append(int(temp[1]))
 
-    pad1.pop(0)                             # remove head element
-    pad2.pop(0)
+        pad1_record.append(int(temp[0]))        # for data logging
+        pad2_record.append(int(temp[1]))
 
-    xline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))                   #sets xdata to new list length
-    yline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))
+        pad1.pop(0)                             # remove head element
+        pad2.pop(0)
 
-    xline.set_ydata(pad1)                   #sets ydata to new list
-    yline.set_ydata(pad2)
+        xline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))                   #sets xdata to new list length
+        yline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))
 
-    plt.draw()                              #draws new plot
+        xline.set_ydata(pad1)                   #sets ydata to new list
+        yline.set_ydata(pad2)
 
-    plt.pause(0.000001)                     #in seconds
-    counter = counter + 1
+        plt.draw()                              #draws new plot
 
-    if counter > window_size :
-        time_min = time_min + (period/1000)
-        plt.xlim(time_min, window_size/(1000/period)+(period/1000))
-        # time.pop(0)
-        # time.append(time[-1] + period/1000)
+        plt.pause(0.000001)                     #in seconds
 
 
+    except KeyboardInterrupt:
+        # board.exit()
+        rows = zip(pad1_record, pad2_record)
+        row_arr = np.array(rows)                    #creates array from list
 
-
-
-
-#rows = zip(x, y, z)                        #combines lists together
-rows = zip(x, y)
-
-row_arr = np.array(rows)                    #creates array from list
-
-np.savetxt("C:\\Users\\USER\\Desktop\\Documents\\test_radio2.txt", row_arr) #save data in file (load w/np.loadtxt())
-
-ser.close() #closes serial connection (very important to do this! if you have an error partway through the code, type this into the cmd line to close the connection)
+        #save data in file (load w/np.loadtxt())
+        np.savetxt("C:\\Users\\USER\\Desktop\\Documents\\test_file.txt", row_arr)
+        ser.close() #closes serial connection (very important to do this! if you have an error partway through the code, type this into the cmd line to close the connection)
+        break
