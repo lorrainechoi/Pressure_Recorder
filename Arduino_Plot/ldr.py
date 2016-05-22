@@ -81,14 +81,14 @@ while True:                                 #while you are taking data
         pad2.pop(0)
 
         if pad1[-1] > 0:
-            midi_out.send_message([0x90, 60, pad1[-1]]) # Note on
+            midi_out.send_message([0x90, 60, (pad1[-1]/4)]) # Note on; pitch = C (60)
         else:
-            midi_out.send_message([0x80, 60, pad1[-2]]) # Note off
+            midi_out.send_message([0x80, 60, (pad1[-2]/4)]) # Note off
 
         if pad2[-1] > 0:
-            midi_out.send_message([0x90, 64, pad2[-1]]) # Note on
+            midi_out.send_message([0x90, 64, (pad2[-1]/4)]) # Note on ; pitch = E (64)
         else:
-            midi_out.send_message([0x80, 64, pad2[-2]]) # Note off
+            midi_out.send_message([0x80, 64, (pad2[-2]/4)]) # Note off
 
 
         xline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))                   #sets xdata to new list length
