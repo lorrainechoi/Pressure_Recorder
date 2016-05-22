@@ -6,21 +6,11 @@ import serial
 import matplotlib.pyplot as plt
 import numpy as np
 import win32com.client
+import rtmidi_python as rtmidi
+# import Tkinter
 
-# import fluidsynth
-# import time
-# import sys
-# import math
 
 connected = False
-
-# fs = fluidsynth.Synth()
-# fs.start(driver='alsa')
-#
-# # Load the accordion soundfont
-# sfid = fs.sfload("accordion.sf2")
-# fs.program_select(0, sfid, 0, 0)
-
 
 #finds COM port that the Arduino is on (assumes only one Arduino is connected)
 wmi = win32com.client.GetObject("winmgmts:")
@@ -35,6 +25,10 @@ ser = serial.Serial(comPort, 9600)          #sets up serial connection (make sur
 while not connected:
     serin = ser.read()
     connected = True
+
+
+midi_out = rtmidi.MidiOut()
+midi_out.open_port(0)
 
 
 plt.ion()                                   #sets plot to animation mode
@@ -85,6 +79,17 @@ while True:                                 #while you are taking data
 
         pad1.pop(0)                             # remove head element
         pad2.pop(0)
+
+        if pad1[-1] > 0:
+            midi_out.send_message([0x90, 60, pad1[-1]]) # Note on
+        else:
+            midi_out.send_message([0x80, 60, pad1[-2]]) # Note off
+
+        if pad2[-1] > 0:
+            midi_out.send_message([0x90, 64, pad2[-1]]) # Note on
+        else:
+            midi_out.send_message([0x80, 64, pad2[-2]]) # Note off
+
 
         xline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))                   #sets xdata to new list length
         yline.set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))
