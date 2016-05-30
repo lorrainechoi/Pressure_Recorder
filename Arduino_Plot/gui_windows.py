@@ -44,8 +44,10 @@ pad6_record = []
 velocity = [0]*total_pads
 pad_active = [False]*total_pads
 velocity = [0]*total_pads
-instrument = [0]*total_pads                             # 64 = soprano sax
-pitch = [60]*total_pads                                 # note C & E
+# instrument = [0]*total_pads                             # 64 = soprano sax
+instrument = [64, 56]
+pitch = [60, 64]
+# pitch = [60]*total_pads                                 # note C & E
 # previous_pitch = [60, 64]
 
 # set up midi ports
@@ -124,7 +126,7 @@ def animate(i):
 
                 velocity[i] = int(temp[i])/8
 
-                if ((plot_data[colNacd ][-1] > 0) & (pad_active[i] == False)):
+                if ((plot_data[colName][-1] > 0) & (pad_active[i] == False)):
                     midi_out.send_message([0xC0 + i, instrument[i]])                        # use channel i
                     midi_out.send_message([0x90 + i, pitch[i], velocity[i]])                # Note on
                     pad_active[i] = True
