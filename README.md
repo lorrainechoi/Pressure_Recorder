@@ -12,19 +12,26 @@ Pressure recorder is a arduino-python synthesizer that records pressure from dif
 
 # Hardware Equipment
 * Arduino Uno board
-* Force Sensing Resistors (FSR)
+* Pressure Touch Pads / Force Sensing Resistors (FSR)
 * LED for visual feedback (optional)
 * Resistors
 
 # How to run this project (Software)
 1. Connect Arduino to laptop through USB
 2. Upload Arduino code to Arduino board
-3. Open terminal, cd to `Pressure_Sensor` file and run script: `python ldr.py`
-4. ctrl+C to terminate python script
+3. Open terminal, cd to `Pressure_Sensor` file and run script: `python gui_windows.py`
+<!-- 4. ctrl+C to terminate python script -->
 
 
 # Next Steps
-* Check MIDI - try to link to garageband/IAC driver (Mac compatible)
+* Calibrate y-axis
+* Add MUX for location change
+* Mac friendly version
+
+# Done
+* Check MIDI - try to link to garageband (need to open virtual port)
 * Build GUI: add stop button & and save csv file with file path input from GUI
-* Build pressure sensing touch-pads & calibrate y-axis
+* Build pressure sensing touch-pads
+
+# Cancelled
 * Make touch pads to work wirelessly
