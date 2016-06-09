@@ -4,27 +4,31 @@ int forceReading = 0;
 
 
 //Mux control pins
-int s0 = 8;
-int s1 = 9;
-int s2 = 10;
-int s3 = 11;
+int en = 12;          //blue
+int s0 = 11;          //orange
+int s1 = 10;          //yellow
+int s2 = 9;           //green
+int s3 = 8;           //purple
 
 //Mux in "SIG" pin
-int SIG_pin = 0;
+int SIG_pin = 0;      //grey
 
 
 void setup(){
+  pinMode(en, OUTPUT);
   pinMode(s0, OUTPUT); 
   pinMode(s1, OUTPUT); 
   pinMode(s2, OUTPUT); 
   pinMode(s3, OUTPUT); 
 
+  digitalWrite(en, LOW);
   digitalWrite(s0, LOW);
   digitalWrite(s1, LOW);
   digitalWrite(s2, LOW);
   digitalWrite(s3, LOW);
 
   Serial.begin(10);
+  //Serial.begin(9600);
 }
 
 
@@ -35,12 +39,12 @@ void loop(){
     delay(100);
 
     forceReading = readMux(i);                              // read the input pin
-    int ledPin = pin + 9;
-    analogWrite(ledPin, forceReading/4);
+    //int ledPin = pin + 9;
+    //analogWrite(ledPin, forceReading/4);
     
     Serial.print(forceReading);
 
-    if(pin < noOfPads-1){    
+    if(i < 11){    
       Serial.print("\t");  
     } 
     else{
@@ -86,28 +90,4 @@ int readMux(int channel){
   return val;
 }
 
-
-
-
-
-
-
-
-
-void loop() {
-  for(int pin=0; pin < noOfPads; pin++){
-    delay(100);
-    forceReading = analogRead(pin);                              // read the input pin
-    int ledPin = pin + 9;
-    analogWrite(ledPin, forceReading/4);
-    
-    Serial.print(forceReading);
-
-    if(pin < noOfPads-1){    
-      Serial.print("\t");  
-    } else {
-      Serial.println();
-    }
-  } 
-}
 

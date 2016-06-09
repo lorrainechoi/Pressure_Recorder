@@ -1,7 +1,7 @@
 from Tkinter import *
 from tkFileDialog import askopenfilename
-# import os
 import ttk
+import os
 from time import gmtime, strftime
 import serial
 import numpy as np
@@ -14,6 +14,7 @@ from matplotlib.figure import Figure
 import matplotlib.animation as animation
 from matplotlib import style
 import rtmidi_python as rtmidi
+from midiutil.MidiFile import MIDIFile
 
 
 # initialise: total no. of available pads & locations
@@ -33,7 +34,7 @@ ser.baudrate = 10                                   # baud rate from Arduino
 
 # initialise plot variables
 global instrument, pitch, no_of_pads, location
-global lines
+global lines, pad_records
 lines = {}
 plot_data = {}
 pad_records = {}
@@ -91,7 +92,7 @@ def init_plot():
 
 def animate(i):
 
-    global lines, plot_data, pad1_record, pad2_record
+    global lines, plot_data, pad1_record, pad2_record, pad_records
 
     if connected:
         try:
@@ -115,7 +116,6 @@ def animate(i):
     for i in range(0, total_pads):
         colName = "pad" + str(i+1)
         padLocation = location[i]-1
-
         if padLocation == -1:
             continue
 
@@ -221,22 +221,23 @@ class InitialisePage(Frame) :
             self.padInstrument["pad{0}".format(i)] = StringVar()
             self.padPitch["pad{0}".format(i)] = StringVar()
             self.padOn["pad{0}".format(i)] = BooleanVar()
+            # self.padLocation["pad{0}".format(i)] = StringVar()
             self.padLocation["pad{0}".format(i)] = IntVar()
 
         self.instrument_selection = {}
-        self.instrument_selection["instrument"] = ["Violin", "Flute", "Trumpet"]
-        self.instrument_selection["index"] = [40, 73, 56]
+        self.instrument_selection["instrument"] = [" ", "Violin", "Flute", "Trumpet"]
+        self.instrument_selection["index"] = [0, 40, 73, 56]
 
         self.pitch_selection = {}
-        self.pitch_selection["pitch"] = ["C", "D", "E", "F", "G", "A", "B", "C'"]
-        self.pitch_selection["index"] = [60, 62, 64, 65, 67, 69, 71, 72]
+        self.pitch_selection["pitch"] = [" ","C", "D", "E", "F", "G", "A", "B", "C'"]
+        self.pitch_selection["index"] = [0, 60, 62, 64, 65, 67, 69, 71, 72]
 
         self.create_header_row()
         self.create_pad_checkbox()
         self.create_pitch_list()
         self.create_instrument_list()
         self.create_location_list()
-        self.create_browse_button()
+        # self.create_browse_button()
         self.create_connect_button(master)
         self.create_confirm_button(master, controller)
 
@@ -263,7 +264,7 @@ class InitialisePage(Frame) :
         """Create dropdown list for pitch selection"""
         for i in range(1, total_pads+1):
             colName = "pad" + str(i)
-            pad_pitch_list = ttk.OptionMenu(self, self.padPitch[colName], " ", *self.pitch_selection["pitch"])
+            pad_pitch_list = ttk.OptionMenu(self, self.padPitch[colName], *self.pitch_selection["pitch"])
             pad_pitch_list.grid(row = i+1, column = 1, sticky = 'EW')
 
 
@@ -271,13 +272,16 @@ class InitialisePage(Frame) :
         """Create instrument selection list per pad"""
         for i in range(1, total_pads+1):
             colName = "pad" + str(i)
-            pad_instrument_list = ttk.OptionMenu(self, self.padInstrument[colName], " ", *self.instrument_selection["instrument"])
+            pad_instrument_list = ttk.OptionMenu(self, self.padInstrument[colName], *self.instrument_selection["instrument"])
             pad_instrument_list.grid(row = i+1, column = 2, sticky = 'EW')
 
 
     def create_location_list(self):
         """Create pad location selection list"""
+        # location = [" "]
+        # location.append(str(range(1,total_location+1)))
         location = range(1,total_location+1)
+
 
         for i in range(1, total_pads+1):
             colName = "pad" + str(i)
@@ -288,7 +292,7 @@ class InitialisePage(Frame) :
     def create_browse_button(self):
         self.filepath = StringVar()
         self.filename = StringVar()
-        self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.csv')
+        self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.mid')
         # print self.filename.get()
 
         """Create Browse Button"""
@@ -299,7 +303,7 @@ class InitialisePage(Frame) :
         browse_button = ttk.Button(self, text = "Browse", command = self.askopenfile)
         browse_button.grid(row = 9, column = 4, padx = 5, sticky = 'W')
 
-        filename_label = ttk.Label(self, text = "Csv filename:")
+        filename_label = ttk.Label(self, text = "MIDI filename:")
         filename_label.grid(row = 10, column = 0, sticky = 'E', padx = 5, pady = 4)
         self.saveFileName = ttk.Entry(self, textvariable = self.filename)
         self.saveFileName.grid(row = 10, column = 1, sticky = 'EW', columnspan = 3)
@@ -347,7 +351,7 @@ class InitialisePage(Frame) :
             ser.open()                                       # sets up serial connection (make sure baud rate is correct - matches Arduino)
             # print ser
             if not connected:
-                serin = ser.read()
+                # serin = ser.read()
                 connected = True
                 # print connected
                 connectedMsg = ttk.Label(self, text = "Connected to Arduino!                   ")
@@ -361,7 +365,7 @@ class InitialisePage(Frame) :
 
     def create_confirm_button(self, master, controller):
         def callback():
-            master.saveFilePath = self.browse_filepath.get() + "/" + self.saveFileName.get()
+            # master.saveFilePath = self.browse_filepath.get() + "/" + self.saveFileName.get()
             global instrument, pitch, no_of_pads
 
             no_of_pads = 0
@@ -372,7 +376,13 @@ class InitialisePage(Frame) :
                 instrument[i] = self.instrument_selection["index"][tempIndex]
                 tempIndex = self.pitch_selection["pitch"].index(self.padPitch[colName].get())
                 pitch[i] = self.pitch_selection["index"][tempIndex]
-                location[i] = self.padLocation[colName].get()
+                # if self.padLocation[colName].get() != " ":
+                #     location[i] = self.padLocation[colName].get()
+                try:
+                    location[i] = self.padLocation[colName].get()
+                except:
+                    continue
+
                 if(self.padOn[colName].get()):
                     no_of_pads = no_of_pads + 1
 
@@ -386,27 +396,108 @@ class InitialisePage(Frame) :
 class PlotPage(Frame):
 
     def __init__(self, master, controller):
-        # ani = animation.FuncAnimation(f, func = animate, init_func = init_plot, interval=50)
+
         global ser, instrument
+
         Frame.__init__(self, master)
-        self.title = ttk.Label(self, text = "Pressure Reading from Pads", font = ("", "14", "bold"))
+
+        self.graphframe = Frame(self)
+        self.graphframe.pack(side = TOP, fill=BOTH, expand=True)
+        self.filenameframe = Frame(self)
+        self.filenameframe.pack(side = BOTTOM, fill=BOTH, pady = 10)
+        self.browseframe = Frame(self)
+        self.browseframe.pack(side = BOTTOM, fill=BOTH, pady = 10)
+
+        self.title = ttk.Label(self.graphframe, text = "Pressure Reading from Pads", font = ("", "14", "bold"))
         self.title.pack(pady = 10, padx = 10)
 
-        # print instrument
 
-        canvas = FigureCanvasTkAgg(f, self)
+        # figure window
+        canvas = FigureCanvasTkAgg(f, self.graphframe)
         canvas.show()
         canvas.get_tk_widget().pack(side=BOTTOM, fill=BOTH, expand=True)
 
-        toolbar = NavigationToolbar2TkAgg(canvas, self)
+        toolbar = NavigationToolbar2TkAgg(canvas, self.graphframe)
         toolbar.update()
         canvas._tkcanvas.pack(side=TOP, fill=BOTH, expand=True)
+
+        self.filepath = StringVar()
+        self.filename = StringVar()
+
+        self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.mid')
+
+        browse_label = ttk.Label(self.browseframe, text = "Save MIDI file in:")
+        browse_label.pack(side = LEFT, fill=Y, padx = 5)
+        self.browse_filepath = ttk.Entry(self.browseframe, textvariable = self.filepath)
+        self.browse_filepath.pack(side = LEFT, fill=X, expand=True, padx = 5)
+        browse_button = ttk.Button(self.browseframe, text = "Browse", command = self.askopenfile)
+        browse_button.pack(side = LEFT, fill=BOTH, padx = 5)
+
+        filename_label = ttk.Label(self.filenameframe, text = "MIDI filename:")
+        filename_label.pack(side = LEFT, fill=Y, padx = 5)
+        saveFileName = ttk.Entry(self.filenameframe, textvariable = self.filename)
+        saveFileName.pack(side = LEFT, fill=X, expand=True, padx = 5)
+        browse_button = ttk.Button(self.filenameframe, text = "Save", command = self.savefile)
+        browse_button.pack(side = LEFT, fill=BOTH, padx = 5)
+
+
+    def askopenfile(self):
+        """ Method to locate file path and display in entry box """
+        filename = askopenfilename()
+        self.filepath = os.path.dirname(filename)
+        self.browse_filepath.delete(0, END)
+        self.browse_filepath.insert(0, self.filepath)
+
+    def savefile(self):
+        """Construct MIDI file and save"""
+        global pad_records, instrument, pitch
+
+        MyMIDI = MIDIFile(1)
+        MyMIDI.addTempo(0, 0, 600)
+
+        for i in range(0, total_pads):
+            pad_active = False
+            list_length = len(pad_records["pad{0}".format(i+1)])
+            MyMIDI.addProgramChange(0, i, 0, instrument[i])                            # set channel instrument
+            for j in range(0, list_length):
+                velocity = pad_records["pad{0}".format(i+1)][j]/8
+                if not pad_active and (velocity > 0):
+                    MyMIDI.addNote(0, i, 60, 0, list_length-j, velocity)               # add note if velocity > 0 and pad not on
+                    pad_active = True
+                elif pad_active:
+                    MyMIDI.addControllerEvent(0, i, j, 0x07, velocity)                 # change volume
+                    if velocity == 0:
+                        pad_active = False
+
+
+        filename = self.filepath.get() + "/" + self.filename.get()
+        try:
+            binfile = open(filename, 'wb')
+            MyMIDI.writeFile(binfile)
+            binfile.close()
+            print "saved"
+            tkMessageBox.showinfo(
+                " ",
+                "Saved MIDI file"
+            )
+        except:
+            tkMessageBox.showerror(
+                "Error",
+                "Cannot save MIDI file"
+            )
+
+
+
+
+
+
+
 
 
 
 if __name__ == "__main__":
     app = Application()
-    app.geometry("800x500")
+    app.geometry("1600x800")
     ani = animation.FuncAnimation(f, func = animate, init_func = init_plot, interval=50)
     app.mainloop()
     # global instrument
