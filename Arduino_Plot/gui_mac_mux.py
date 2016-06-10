@@ -6,7 +6,7 @@ import os
 from time import gmtime, strftime
 import serial
 import numpy as np
-import win32com.client                                  # for windows only
+import glob
 import matplotlib
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
@@ -29,9 +29,11 @@ period = 200                                            # period (in ms) between
 # initialise serial ports
 global ser
 global connected
+global baudrate
+baudrate = 10
 connected = False
 ser = serial.Serial()
-ser.baudrate = 10                                   # baud rate from Arduino
+ser.baudrate = baudrate                                   # baud rate from Arduino
 
 # initialise plot variables
 global instrument, pitch, no_of_pads, location
@@ -52,7 +54,7 @@ for i in range(1, total_pads+1):
 
 # set up midi ports
 midi_out = rtmidi.MidiOut()                             # search for available midi ports
-midi_out.open_port(0)
+midi_out.midiout.open_virtual_port("Virtual Port")
 
 # set up plot structure & parameters
 f = Figure(figsize=(5,5), dpi=100)
@@ -335,10 +337,19 @@ class InitialisePage(Frame) :
 
     def find_com_port(self, master):
         # finds COM port that the Arduino is on (assumes only one Arduino is connected)
-        wmi = win32com.client.GetObject("winmgmts:")
-        for port in wmi.InstancesOf("Win32_SerialPort"):
-            if "Arduino" in port.Name:
-                self.comPort.set(str(port.DeviceID))
+        global baudrate
+        ports = glob.glob('/dev/tty.*')
+        result = []
+        for port in ports:
+            try:
+                s = serial.Serial(port, baudrate)
+                s.close()
+                result.append(port)
+            except (OSError, serial.SerialException):
+                pass
+    
+        if len(result) == 1:
+            self.comPort.set(str(result[0]))
 
 
     def connect_arduino_windows(self):
