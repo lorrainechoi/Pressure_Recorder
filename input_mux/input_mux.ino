@@ -27,7 +27,7 @@ void setup(){
   digitalWrite(s2, LOW);
   digitalWrite(s3, LOW);
 
-  Serial.begin(10);
+  Serial.begin(60);
   //Serial.begin(9600);
 }
 

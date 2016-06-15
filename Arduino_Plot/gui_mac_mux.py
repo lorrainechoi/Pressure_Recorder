@@ -30,7 +30,7 @@ period = 200                                            # period (in ms) between
 global ser
 global connected
 global baudrate
-baudrate = 10
+baudrate = 60
 connected = False
 ser = serial.Serial()
 ser.baudrate = baudrate                                   # baud rate from Arduino
@@ -141,12 +141,6 @@ def animate(i):
             midi_out.send_message([0x90 + i, pitch[i], 0])                 # Note off
             pad_active[i] = False
 
-    # for i in range(0, total_pads):
-    #     # pad_records["pad{0}".format(i+1)].append = int(temp[i])
-    #     lines["line{0}".format(i+1)][0].set_ydata((plot_data["pad{0}".format(i+1)]))
-
-    # plt.draw()
-    # plt.pause(0.01)
     a.plot()
 
 
@@ -347,7 +341,7 @@ class InitialisePage(Frame) :
                 result.append(port)
             except (OSError, serial.SerialException):
                 pass
-    
+
         if len(result) == 1:
             self.comPort.set(str(result[0]))
 

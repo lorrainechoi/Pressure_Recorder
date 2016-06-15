@@ -31,7 +31,7 @@ global ser
 global connected
 connected = False
 ser = serial.Serial()
-ser.baudrate = 10                                   # baud rate from Arduino
+ser.baudrate = 60                                   # baud rate from Arduino
 
 # initialise plot variables
 global instrument, pitch, no_of_pads, location
@@ -49,6 +49,8 @@ location = [0]*total_pads
 
 for i in range(1, total_pads+1):
     pad_records["pad{0}".format(i)] = []
+
+
 
 # set up midi ports
 midi_out = rtmidi.MidiOut()                             # search for available midi ports
@@ -70,23 +72,24 @@ def init_plot():
         lines["line{0}".format(i)][0].set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))
         # lines["line{0}".format(i+1)][0].set_ydata((plot_data["pad{0}".format(i+1)]))
 
-    a.set_ylim(0,1023)                                        # sets the y axis limits
+    # a.set_ylim(0,1023)                                        # sets the y axis limits
+    a.set_ylim(0, 35)
     a.set_xlim(0, window_size/(1000/period))
     # a.set_title("Arduino Reading")
     # a.grid(True)
 
-    # if no_of_pads == 2:
-    #     a.legend([line1, line2], ['pad1', 'pad2'])
-    # elif no_of_pads == 3:
-    #     a.legend([line1, line2, line3], ['pad1', 'pad2', 'pad3'])
-    # elif no_of_pads == 4:
-    #     a.legend([line1, line2, line3, line4], ['pad1', 'pad2', 'pad3', 'pad4'])
-    # elif no_of_pads == 5:
-    #     a.legend([line1, line2, line3, line4, line5], ['pad1', 'pad2', 'pad3', 'pad4', 'pad5'])
-    # elif no_of_pads == 6:
-    #     a.legend([line1, line2, line3, line4, line5, line6], ['pad1', 'pad2', 'pad3', 'pad4', 'pad5', 'pad6'])
+    if no_of_pads == 2:
+        a.legend([line1, line2], ['pad1', 'pad2'])
+    elif no_of_pads == 3:
+        a.legend([line1, line2, line3], ['pad1', 'pad2', 'pad3'])
+    elif no_of_pads == 4:
+        a.legend([line1, line2, line3, line4], ['pad1', 'pad2', 'pad3', 'pad4'])
+    elif no_of_pads == 5:
+        a.legend([line1, line2, line3, line4, line5], ['pad1', 'pad2', 'pad3', 'pad4', 'pad5'])
+    elif no_of_pads == 6:
+        a.legend([line1, line2, line3, line4, line5, line6], ['pad1', 'pad2', 'pad3', 'pad4', 'pad5', 'pad6'])
 
-    a.set_ylabel('Pressure')
+    a.set_ylabel('Force')
     a.set_xlabel('Time')
 
 
@@ -94,6 +97,29 @@ def init_plot():
 def animate(i):
 
     global lines, plot_data, pad1_record, pad2_record, pad_records
+
+
+    force_mapping = {}
+    force_mapping["force"] = [0, 1.08, 2.13, 3.28, 4.14, 5.04, 5.97, 6.9, 7.76, 8.51, 9.33, 10.04, 10.86, 11.64, 12.35, 13.1, 13.88, 14.48, 15.04, 15.45, 15.75, 16.12, 16.38, 16.68, 16.94, 17.2, 17.46, 17.8, 18.13, 18.47, 18.88, 19.4, 20, 20.52, 21.01, 21.68, 22.39, 23.02, 23.81, 24.55, 25, 25.6, 26.19, 26.94, 27.65, 28.4, 29.18, 29.85, 30.34]
+    force_mapping["reading"] = [6.43, 15.01, 25.74, 36.46, 42.9, 49.33, 57.91, 64.34, 72.92, 83.65, 94.37, 98.66, 113.67, 128.69, 147.99, 169.44, 201.61, 231.64, 263.81, 298.12, 328.15, 368.9, 401.07, 433.24, 471.85, 499.73, 538.34, 572.65, 598.39, 624.13, 647.72, 671.31, 684.18, 694.91, 701.34, 709.92, 718.5, 724.93, 733.51, 742.09, 746.38, 752.82, 759.25, 765.68, 772.12, 780.7, 787.13, 793.57, 802.14]
+
+    velocity_mapping = {}
+    # velocity_mapping["force"] = np.arange(0, 31)
+    # velocity_mapping["velocity"] = map(int, np.arange(0, 128, 4.233))
+    velocity_mapping["force"] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30]
+    velocity_mapping["velocity"] = [0, 4, 8, 13, 17, 21, 25, 30, 34, 38, 42, 47, 51, 55, 59, 64, 68, 72, 76, 80, 85, 89, 93, 97, 102, 106, 110, 114, 119, 123, 127]
+
+
+    def force_mapping_func(myNumber):
+        temp = min(force_mapping["reading"], key=lambda x:abs(x-int(myNumber)))
+        tempIndex = force_mapping["reading"].index(temp)
+        return force_mapping["force"][tempIndex]
+
+
+    def velocity_mapping_func(myNumber):
+        temp = min(velocity_mapping["force"], key=lambda x:abs(x-int(myNumber)))
+        tempIndex = velocity_mapping["force"].index(temp)
+        return velocity_mapping["velocity"][tempIndex]
 
     if connected:
         try:
@@ -120,17 +146,20 @@ def animate(i):
         if padLocation == -1:
             continue
 
-        plot_data[colName].append(int(temp[padLocation]))                                     # append new pressure data to list (0-1023)
+        # plot_data[colName].append(int(temp[padLocation]))
+        plot_data[colName].append(force_mapping_func(int(temp[padLocation])))                                     # append new pressure data to list (0-1023)
         plot_data[colName].pop(0)                                                   # remove first element from list
-        velocity[i] = int(temp[padLocation])/8
+        # velocity[i] = int(temp[padLocation])/8
+        velocity[i] = velocity_mapping_func(force_mapping_func(int(temp[padLocation])))
         lines["line{0}".format(i+1)][0].set_ydata((plot_data["pad{0}".format(i+1)]))
-        pad_records["pad{0}".format(i+1)].append(int(temp[padLocation]))
+        # pad_records["pad{0}".format(i+1)].append(int(temp[padLocation]))
+        pad_records["pad{0}".format(i+1)].append(force_mapping_func(int(temp[padLocation])))
 
         if ((plot_data[colName][-1] > 0) & (pad_active[i] == False)):
             midi_out.send_message([0xC0 + i, instrument[i]])                        # use channel i
             midi_out.send_message([0x90 + i, pitch[i], velocity[i]])                # Note on
             pad_active[i] = True
-            # print "play"
+            print "play"
 
         elif ((plot_data[colName][-1]  > 0) & (pad_active[i] == True)):
             midi_out.send_message([0xB0 + i, 0x07, velocity[i]])                    # change volume
@@ -148,7 +177,7 @@ def animate(i):
     a.plot()
 
 
-    # print temp
+    print temp
 
 
 
@@ -159,7 +188,7 @@ class Application(Tk):
         Tk.__init__(self, *args, **kwargs)
         global ser
         global connected
-        print str(ser.port) + " " + str(connected)
+        # print str(ser.port) + " " + str(connected)
 
         # Tk.iconbitmap(self, default = "icon.ico")
         Tk.wm_title(self, "Pressure Touch Music")
@@ -179,7 +208,7 @@ class Application(Tk):
 
         for F in (InitialisePage, PlotPage):
             frame = F(container, self)
-            print str(ser.port) + " " + str(connected)
+            # print str(ser.port) + " " + str(connected)
             self.frames[F] = frame
             frame.grid(row = 0, column = 0, sticky = "nesw")
 
