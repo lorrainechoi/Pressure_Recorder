@@ -23,7 +23,7 @@ style.use("ggplot")
 total_location = 12
 total_pads = 6
 window_size = 600                                       # sets the duration of data shown
-period = 200                                            # period (in ms) between each message
+period = 100                                            # period (in ms) between each message
 
 # initialise serial ports
 global ser
@@ -71,19 +71,8 @@ def init_plot():
         lines["line{0}".format(i)][0].set_xdata(np.arange(time_min, window_size/(1000/period), (float(period)/1000)))
         # lines["line{0}".format(i+1)][0].set_ydata((plot_data["pad{0}".format(i+1)]))
 
-    a.set_ylim(0, 70)
+    a.set_ylim(0, 50)
     a.set_xlim(0, window_size/(1000/period))
-
-    if no_of_pads == 2:
-        a.legend([line1, line2], ['pad1', 'pad2'])
-    elif no_of_pads == 3:
-        a.legend([line1, line2, line3], ['pad1', 'pad2', 'pad3'])
-    elif no_of_pads == 4:
-        a.legend([line1, line2, line3, line4], ['pad1', 'pad2', 'pad3', 'pad4'])
-    elif no_of_pads == 5:
-        a.legend([line1, line2, line3, line4, line5], ['pad1', 'pad2', 'pad3', 'pad4', 'pad5'])
-    elif no_of_pads == 6:
-        a.legend([line1, line2, line3, line4, line5, line6], ['pad1', 'pad2', 'pad3', 'pad4', 'pad5', 'pad6'])
 
     a.set_ylabel('Force')
     a.set_xlabel('Time')
@@ -94,7 +83,6 @@ def animate(i):
 
     global lines, plot_data, pad1_record, pad2_record, pad_records
 
-
     force_mapping = {}
     force_mapping["force"] =[0, 7.55, 8.67, 9.71, 10.68, 11.6, 12.47, 13.3, 14.08, 14.82, 15.54, 16.22, 16.87, 17.5, 18.1, 18.68, 19.24, 19.78, 20.3, 20.81, 21.3, 21.77, 22.24, 22.68, 23.12, 23.55, 23.96, 24.36, 24.75, 25.14, 25.51, 25.88, 26.23, 26.58, 26.92, 27.26, 27.58, 27.91, 28.22, 28.53, 28.83, 29.13, 29.42, 29.7, 29.98, 30.26, 30.53, 30.8, 31.06, 31.32, 31.57, 31.82, 32.07, 32.31, 32.55, 32.78, 33.01, 33.24, 33.46, 33.69, 33.9, 34.12, 34.33, 34.54, 34.75, 34.95, 35.15, 35.35, 35.55, 35.74, 35.94, 36.13, 36.31, 36.5, 36.68, 36.86, 37.04, 37.22, 37.39, 37.56, 37.74]
     force_mapping["reading"] = [0, 150, 161, 172, 183, 194, 205, 216, 227, 238, 249, 260, 271, 282, 293, 304, 315, 326, 337, 348, 359, 370, 381, 392, 403, 414, 425, 436, 447, 458, 469, 480, 491, 502, 513, 524, 535, 546, 557, 568, 579, 590, 601, 612, 623, 634, 645, 656, 667, 678, 689, 700, 711, 722, 733, 744, 755, 766, 777, 788, 799, 810, 821, 832, 843, 854, 865, 876, 887, 898, 909, 920, 931, 942, 953, 964, 975, 986, 997, 1008, 1019]
@@ -104,6 +92,7 @@ def animate(i):
     velocity_mapping["force"] = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40]
     velocity_mapping["velocity"] = [0, 3, 6, 10, 13, 16, 19, 22, 25, 29, 32, 35, 38, 41, 44, 48, 51, 54, 57, 60, 64, 67, 70, 73, 76, 79, 83, 86, 89, 92, 95, 98, 102, 105, 108, 111, 114, 117, 121, 124, 127]
 
+    handle_label = []
 
     def force_mapping_func(myNumber):
         temp = min(force_mapping["reading"], key=lambda x:abs(x-int(myNumber)))
@@ -131,7 +120,7 @@ def animate(i):
         temp = [0]*total_location
 
 
-    for i in range(0, total_pads):
+    for i in range(0, no_of_pads):
         colName = "pad" + str(i+1)
         padLocation = location[i]-1
         if padLocation == -1:
@@ -139,9 +128,9 @@ def animate(i):
 
         plot_data[colName].append(force_mapping_func(int(temp[padLocation])))                                     # append new pressure data to list (0-1023)
         plot_data[colName].pop(0)                                                   # remove first element from list
-        print force_mapping_func(int(temp[padLocation]))
+        # print force_mapping_func(int(temp[padLocation]))
         velocity[i] = velocity_mapping_func(force_mapping_func(int(temp[padLocation])))
-        print velocity[i]
+        # print velocity[i]
         lines["line{0}".format(i+1)][0].set_ydata((plot_data["pad{0}".format(i+1)]))
         pad_records["pad{0}".format(i+1)].append(force_mapping_func(int(temp[padLocation])))
 
@@ -149,7 +138,7 @@ def animate(i):
             midi_out.send_message([0xC0 + i, instrument[i]])                        # use channel i
             midi_out.send_message([0x90 + i, pitch[i], velocity[i]])                # Note on
             pad_active[i] = True
-            print "play"
+            # print "play"
 
         elif ((plot_data[colName][-1]  > 0) & (pad_active[i] == True)):
             midi_out.send_message([0xB0 + i, 0x07, velocity[i]])                    # change volume
@@ -158,10 +147,14 @@ def animate(i):
             midi_out.send_message([0x90 + i, pitch[i], 0])                 # Note off
             pad_active[i] = False
 
+        handle_label.append("pad " + str(i+1))
+
+    a.legend(handle_label)
     a.plot()
+    # print temp
 
 
-    print temp
+    # print temp
 
 
 
@@ -230,8 +223,8 @@ class InitialisePage(Frame) :
             self.padLocation["pad{0}".format(i)] = IntVar()
 
         self.instrument_selection = {}
-        self.instrument_selection["instrument"] = [" ", "Violin", "Flute", "Trumpet"]
-        self.instrument_selection["index"] = [0, 40, 73, 56]
+        self.instrument_selection["instrument"] = [" ", "Violin", "Flute", "Tuba","Trumpet", "Saxaphone"]
+        self.instrument_selection["index"] = [0, 40, 73, 59, 56, 66]
 
         self.pitch_selection = {}
         self.pitch_selection["pitch"] = [" ","C", "D", "E", "F", "G", "A", "B", "C'"]
@@ -290,31 +283,31 @@ class InitialisePage(Frame) :
             pad_location_list.grid(row = i+1, column = 3, sticky = 'EW')
 
 
-    def create_browse_button(self):
-        self.filepath = StringVar()
-        self.filename = StringVar()
-        self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.mid')
-
-        """Create Browse Button"""
-        browse_label = ttk.Label(self, text = "Save csv file in:")
-        browse_label.grid(row = 9, column = 0, sticky = 'E', padx = 5, pady = 4)
-        self.browse_filepath = ttk.Entry(self, textvariable = self.filepath)
-        self.browse_filepath.grid(row = 9, column = 1, sticky = 'EW', columnspan = 3)
-        browse_button = ttk.Button(self, text = "Browse", command = self.askopenfile)
-        browse_button.grid(row = 9, column = 4, padx = 5, sticky = 'W')
-
-        filename_label = ttk.Label(self, text = "MIDI filename:")
-        filename_label.grid(row = 10, column = 0, sticky = 'E', padx = 5, pady = 4)
-        self.saveFileName = ttk.Entry(self, textvariable = self.filename)
-        self.saveFileName.grid(row = 10, column = 1, sticky = 'EW', columnspan = 3)
-
-
-    def askopenfile(self):
-        """ Method to locate file path and display in entry box """
-        filename = askopenfilename()
-        self.filepath = os.path.dirname(filename)
-        self.browse_filepath.delete(0, END)
-        self.browse_filepath.insert(0, self.filepath)
+    # def create_browse_button(self):
+    #     self.filepath = StringVar()
+    #     self.filename = StringVar()
+    #     self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.mid')
+    #
+    #     """Create Browse Button"""
+    #     browse_label = ttk.Label(self, text = "Save csv file in:")
+    #     browse_label.grid(row = 9, column = 0, sticky = 'E', padx = 5, pady = 4)
+    #     self.browse_filepath = ttk.Entry(self, textvariable = self.filepath)
+    #     self.browse_filepath.grid(row = 9, column = 1, sticky = 'EW', columnspan = 3)
+    #     browse_button = ttk.Button(self, text = "Browse", command = self.askopenfile)
+    #     browse_button.grid(row = 9, column = 4, padx = 5, sticky = 'W')
+    #
+    #     filename_label = ttk.Label(self, text = "MIDI filename:")
+    #     filename_label.grid(row = 10, column = 0, sticky = 'E', padx = 5, pady = 4)
+    #     self.saveFileName = ttk.Entry(self, textvariable = self.filename)
+    #     self.saveFileName.grid(row = 10, column = 1, sticky = 'EW', columnspan = 3)
+    #
+    #
+    # def askopenfile(self):
+    #     """ Method to locate file path and display in entry box """
+    #     filename = askopenfilename()
+    #     self.filepath = os.path.dirname(filename)
+    #     self.browse_filepath.delete(0, END)
+    #     self.browse_filepath.insert(0, self.filepath)
 
 
     def create_connect_button(self, master):
@@ -415,16 +408,16 @@ class PlotPage(Frame):
         self.filepath = StringVar()
         self.filename = StringVar()
 
-        self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.mid')
+        self.filename.set(str(strftime("%d-%m-%Y_%H%M", gmtime())) + '.png')
 
-        browse_label = ttk.Label(self.browseframe, text = "Save MIDI file in:")
+        browse_label = ttk.Label(self.browseframe, text = "Save graph in:")
         browse_label.pack(side = LEFT, fill=Y, padx = 5)
         self.browse_filepath = ttk.Entry(self.browseframe, textvariable = self.filepath)
         self.browse_filepath.pack(side = LEFT, fill=X, expand=True, padx = 5)
         browse_button = ttk.Button(self.browseframe, text = "Browse", command = self.askopenfile)
         browse_button.pack(side = LEFT, fill=BOTH, padx = 5)
 
-        filename_label = ttk.Label(self.filenameframe, text = "MIDI filename:")
+        filename_label = ttk.Label(self.filenameframe, text = "Filename:")
         filename_label.pack(side = LEFT, fill=Y, padx = 5)
         self.saveFileName = ttk.Entry(self.filenameframe, textvariable = self.filename)
         self.saveFileName.pack(side = LEFT, fill=X, expand=True, padx = 5)
@@ -445,37 +438,57 @@ class PlotPage(Frame):
         """Construct MIDI file and save"""
         global pad_records, instrument, pitch
 
-        MyMIDI = MIDIFile(1)
-        MyMIDI.addTempo(0, 0, 600)
+        # MyMIDI = MIDIFile(1)
+        # MyMIDI.addTempo(0, 0, 600)
+        #
+        # for i in range(0, total_pads):
+        #     pad_active = False
+        #     list_length = len(pad_records["pad{0}".format(i+1)])
+        #     MyMIDI.addProgramChange(0, i, 0, instrument[i])                            # set channel instrument
+        #     for j in range(0, list_length):
+        #         velocity = pad_records["pad{0}".format(i+1)][j]/8
+        #         if not pad_active and (velocity > 0):
+        #             MyMIDI.addNote(0, i, 60, 0, list_length-j, velocity)               # add note if velocity > 0 and pad not on
+        #             pad_active = True
+        #         elif pad_active:
+        #             MyMIDI.addControllerEvent(0, i, j, 0x07, velocity)                 # change volume
+        #             if velocity == 0:
+        #                 pad_active = False
 
-        for i in range(0, total_pads):
-            pad_active = False
-            list_length = len(pad_records["pad{0}".format(i+1)])
-            MyMIDI.addProgramChange(0, i, 0, instrument[i])                            # set channel instrument
-            for j in range(0, list_length):
-                velocity = pad_records["pad{0}".format(i+1)][j]/8
-                if not pad_active and (velocity > 0):
-                    MyMIDI.addNote(0, i, 60, 0, list_length-j, velocity)               # add note if velocity > 0 and pad not on
-                    pad_active = True
-                elif pad_active:
-                    MyMIDI.addControllerEvent(0, i, j, 0x07, velocity)                 # change volume
-                    if velocity == 0:
-                        pad_active = False
+
+        plt.figure(2)
+        t = np.arange(0, len(pad_records["pad1"])/10.0, (float(period)/1000))
+
+        plot_handles = []
+        handle_label = []
+
+        for i in range(0, no_of_pads):
+            plot_handles.append(plt.plot(t, pad_records["pad{0}".format(i+1)], label = "Pad " + str(i+1)))
+            handle_label.append("pad " + str(i+1))
+
+        plt.xlabel('Time (s)')
+        plt.ylabel('Force (N)')
+        plt.title('Force Reading across Time')
+        plt.xlim(0, len(pad_records["pad1"])/10.0)
+        plt.ylim(0, 50)
+        plt.grid(True)
+        plt.legend(handle_label)
 
 
         filename = self.browse_filepath.get() + "/" + self.saveFileName.get()
         try:
-            binfile = open(filename, 'wb')
-            MyMIDI.writeFile(binfile)
-            binfile.close()
+            plt.savefig(filename)
+            # binfile = open(filename, 'wb')
+            # MyMIDI.writeFile(binfile)
+            # binfile.close()
             tkMessageBox.showinfo(
                 " ",
-                "Saved MIDI file"
+                "Saved file"
             )
         except:
             tkMessageBox.showerror(
                 "Error",
-                "Cannot save MIDI file"
+                "Cannot save file"
             )
 
 

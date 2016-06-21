@@ -36,7 +36,7 @@ void loop(){
 
   //Loop through and read all 16 values
   for(int i = 0; i < 12; i ++){
-    delay(100);
+    delay(10);
 
     forceReading = readMux(i);                              // read the input pin
     //int ledPin = pin + 9;
